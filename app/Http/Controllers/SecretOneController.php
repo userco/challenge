@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Input;
 use Illuminate\Http\Request;
 use View;
 use App\Http\Controllers\Controller;
+use App\Secret;
 
 class SecretOneController extends Controller
 {
@@ -27,8 +28,18 @@ class SecretOneController extends Controller
 		//make the string for the qrCode
 		$qrCode = $label.$username;
 		
+		$secretObject = Secret::find($username);
 		//encode the username
 		$secret = Base32::encode($username);
+		if(!$secretObject){
+			//dd("here");
+			
+			$secretObject = new Secret;
+			$secretObject->code = "";
+			$secretObject->username = $username;
+			$secretObject->save();
+		
+		}
 		
 		//make object of type Barcode
 		$barcodeObject = new \Com\Tecnick\Barcode\Barcode();
@@ -48,8 +59,16 @@ class SecretOneController extends Controller
 		file_put_contents($timestamp . '.png', $imageData);
 		
 		# Generate the current TOTP key
-		$key = (new Totp())->GenerateToken($secret);
-		return View::make('SecretOne/qrcodeview')->with(array('qrCode'=> $timestamp, 'key' => $key));
+		$code = (new Totp())->GenerateToken($secret);
+		if(!$secretObject){
+			$secretObject = new Secret;
+			$secretObject->code = $code;
+			$secretObject->username = $username;
+		}else{
+			$secretObject->code = $code;
+		}	
+		$secretObject->save();
+		return View::make('SecretOne/qrcodeview')->with(array('qrCode'=> $timestamp, 'key' => $code));
 	}
 	
 //the second part of the challenge
@@ -65,16 +84,21 @@ class SecretOneController extends Controller
 		$input = Input::get();
 		$code = $input['code'];
 		$username = $input['username'];
-		
+		$secretObject = Secret::where('username', $username)->get();
+		//dd($secretObject);
+		if(!isset($secretObject[0])){
+			$sentence = "There is no secret for this username";
+			return View::make('SecretOne/qrcode2')->with(array('sentence' => $sentence));
+		}	
 		//encode the username
-		$secret = Base32::encode($username);
-		//generate token
-		$token = (new Totp())->GenerateToken($secret);
+		$token = $secretObject[0]->code;
+	
 		//verify if token matches  code
 		$sentence = "The code does not match the username.";
 		if($code == $token){
 			$sentence = "The code matches the username.";
 		}
+		
 		return View::make('SecretOne/qrcode2')->with(array('sentence' => $sentence));
 	}
 }
