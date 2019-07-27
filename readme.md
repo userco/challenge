@@ -8,9 +8,7 @@
  4. In file config/database.php change database settings
  5. php artisan migrate
  6. php artisan key:generate
- 
  7  php artisan cache:clear
- 
  8. php artisan config:clear
  9. php artisan serve
  
