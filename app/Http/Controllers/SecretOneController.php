@@ -27,8 +27,9 @@ class SecretOneController extends Controller
 		
 		//make the string for the qrCode
 		$qrCode = $label.$username;
-		
-		$secretObject = Secret::find($username);
+		$secretObject = Secret::where('username', $username)->get();
+		$secretObject = $secretObject[0];
+		//$secretObject = Secret::find($username);
 		//encode the username
 		$secret = Base32::encode($username);
 		if(!$secretObject){
