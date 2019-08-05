@@ -27,9 +27,8 @@ class SecretOneController extends Controller
 		
 		//make the string for the qrCode
 		$qrCode = $label.$username;
-		$secretObject = Secret::where('username', $username)->get();
-		$secretObject = $secretObject[0];
-		//$secretObject = Secret::find($username);
+		$secretObject = Secret::where('username', $username)->first();
+	
 		//encode the username
 		$secret = Base32::encode($username);
 		if(!$secretObject){
@@ -85,14 +84,14 @@ class SecretOneController extends Controller
 		$input = Input::get();
 		$code = $input['code'];
 		$username = $input['username'];
-		$secretObject = Secret::where('username', $username)->get();
+		$secretObject = Secret::where('username', $username)->first();
 		//dd($secretObject);
-		if(!isset($secretObject[0])){
+		if(!$secretObject){
 			$sentence = "There is no secret for this username";
 			return View::make('SecretOne/qrcode2')->with(array('sentence' => $sentence));
 		}	
 		//encode the username
-		$token = $secretObject[0]->code;
+		$token = $secretObject->code;
 	
 		//verify if token matches  code
 		$sentence = "The code does not match the username.";
